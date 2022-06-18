@@ -23,5 +23,38 @@ var (
 // Use the errors defined above as described, again wrapping into fmt.Errorf
 
 func StringSum(input string) (output string, err error) {
-	return "", nil
+	if len(input) == 0 {
+		return "", errorEmptyInput
+	}
+
+	i := 0
+
+	scanSymbol := func() byte {
+		if i >= len(input) {
+			return 0
+		}
+
+		c := input[i]
+
+		i++
+
+		return c
+	}
+
+	parser := NewParser()
+
+	for {
+		c := scanSymbol()
+
+		if c == 0 {
+			break
+		}
+
+		err := parser.NextSymbol(c)
+		if err != nil {
+			return "", err
+		}
+	}
+
+	return parser.Calc()
 }
