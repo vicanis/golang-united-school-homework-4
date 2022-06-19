@@ -62,25 +62,16 @@ func cleanInput(input string) []byte {
 func parseNumber(buffer []byte, index int) (number int, newindex int, err error) {
 	newindex = index
 
-outerloop:
 	for {
-		for {
-			if newindex >= len(buffer) || newindex > 0 && is(buffer[newindex], "operator") {
-				break outerloop
-			}
-
-			if newindex == 0 && buffer[newindex] == '-' {
-				break
-			}
-
-			if is(buffer[newindex], "digit") {
-				break
-			}
-
+		if newindex >= len(buffer) || newindex > 0 && is(buffer[newindex], "operator") {
 			break
 		}
 
-		newindex++
+		if newindex == 0 && buffer[newindex] == '-' || is(buffer[newindex], "digit") || newindex > 0 {
+			newindex++
+		} else {
+			break
+		}
 	}
 
 	number, err = strconv.Atoi(string(buffer[index:newindex]))
