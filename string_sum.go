@@ -48,79 +48,64 @@ func is(c byte, t string) bool {
 }
 
 func StringSum(input string) (string, error) {
-	var bs, firstNumber, secondNumber []byte
+	var inputBytes []byte
 
 	for _, c := range input {
 		if !is(byte(c), "whitespace") {
-			bs = append(bs, byte(c))
+			inputBytes = append(inputBytes, byte(c))
 		}
 	}
 
-	if len(bs) == 0 {
-		return "", errorEmptyInput
+	if len(inputBytes) == 0 {
+		return "", fmt.Errorf("parse failed: %w", errorEmptyInput)
 	}
 
-	var i int
-
-	if bs[0] == '-' {
-		firstNumber = append(firstNumber, '-')
-		i++
-	}
+	var i, j int
 
 	for {
-		if is(bs[i], "digit") {
-			firstNumber = append(firstNumber, bs[i])
+		if i < len(inputBytes) && (is(inputBytes[i], "digit") || i == 0 && inputBytes[i] == '-') {
+			i++
 		} else {
 			break
 		}
-
-		if i >= len(bs)-2 {
-			return "", errorNotTwoOperands
-		}
-
-		i++
 	}
 
-	if !is(bs[i], "operator") {
-		return "", fmt.Errorf("no operator ('%c')", bs[i])
+	firstNumber, err := strconv.Atoi(string(inputBytes[:i]))
+	if err != nil {
+		return "", fmt.Errorf("first number parse failed: %w", err)
 	}
 
-	operator := bs[i]
+	if i >= len(inputBytes)-1 {
+		return "", fmt.Errorf("%w: no second operand", errorNotTwoOperands)
+	}
 
-	i++
+	operator := inputBytes[i]
+
+	j = i + 1
 
 	for {
-		if is(bs[i], "digit") {
-			secondNumber = append(secondNumber, bs[i])
+		if j < len(inputBytes) && is(inputBytes[j], "digit") {
+			j++
 		} else {
 			break
 		}
-
-		if i == len(bs)-1 {
-			break
-		}
-
-		i++
 	}
 
-	firstInt, err := strconv.Atoi(string(firstNumber))
+	if j < len(inputBytes)-1 {
+		return "", fmt.Errorf("%w: too many operands", errorNotTwoOperands)
+	}
+
+	secondNumber, err := strconv.Atoi(string(inputBytes[i+1 : j]))
 	if err != nil {
-		return "", err
+		return "", fmt.Errorf("second number parse failed: %w", err)
 	}
-
-	secondInt, err := strconv.Atoi(string(secondNumber))
-	if err != nil {
-		return "", err
-	}
-
-	var resultInt int
 
 	switch operator {
 	case '-':
-		resultInt = firstInt - secondInt
+		return fmt.Sprintf("%d", firstNumber-secondNumber), nil
 	case '+':
-		resultInt = firstInt + secondInt
+		return fmt.Sprintf("%d", firstNumber+secondNumber), nil
 	}
 
-	return fmt.Sprintf("%d", resultInt), nil
+	return "", fmt.Errorf("%w: unknown operator", errorNotTwoOperands)
 }
