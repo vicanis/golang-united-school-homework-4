@@ -2,6 +2,8 @@ package string_sum
 
 import (
 	"errors"
+	"fmt"
+	"strconv"
 )
 
 //use these errors as appropriate, wrapping them with fmt.Errorf function
@@ -22,39 +24,103 @@ var (
 //
 // Use the errors defined above as described, again wrapping into fmt.Errorf
 
-func StringSum(input string) (output string, err error) {
-	if len(input) == 0 {
+func includes(value byte, arr []byte) bool {
+	for _, v := range arr {
+		if v == value {
+			return true
+		}
+	}
+
+	return false
+}
+
+func is(c byte, t string) bool {
+	switch t {
+	case "digit":
+		return includes(c, []byte("0123456789"))
+	case "whitespace":
+		return includes(c, []byte(" \r\n\t"))
+	case "operator":
+		return includes(c, []byte("-+"))
+	}
+
+	return false
+}
+
+func StringSum(input string) (string, error) {
+	var bs, firstNumber, secondNumber []byte
+
+	for _, c := range input {
+		if !is(byte(c), "whitespace") {
+			bs = append(bs, byte(c))
+		}
+	}
+
+	if len(bs) == 0 {
 		return "", errorEmptyInput
 	}
 
-	i := 0
+	var i int
 
-	scanSymbol := func() byte {
-		if i >= len(input) {
-			return 0
-		}
-
-		c := input[i]
-
+	if bs[0] == '-' {
+		firstNumber = append(firstNumber, '-')
 		i++
-
-		return c
 	}
 
-	parser := NewParser()
-
 	for {
-		c := scanSymbol()
-
-		if c == 0 {
+		if is(bs[i], "digit") {
+			firstNumber = append(firstNumber, bs[i])
+		} else {
 			break
 		}
 
-		err := parser.NextSymbol(c)
-		if err != nil {
-			return "", err
+		if i >= len(bs)-2 {
+			return "", errorNotTwoOperands
 		}
+
+		i++
 	}
 
-	return parser.Calc()
+	if !is(bs[i], "operator") {
+		return "", fmt.Errorf("no operator ('%c')", bs[i])
+	}
+
+	operator := bs[i]
+
+	i++
+
+	for {
+		if is(bs[i], "digit") {
+			secondNumber = append(secondNumber, bs[i])
+		} else {
+			break
+		}
+
+		if i == len(bs)-1 {
+			break
+		}
+
+		i++
+	}
+
+	firstInt, err := strconv.Atoi(string(firstNumber))
+	if err != nil {
+		return "", err
+	}
+
+	secondInt, err := strconv.Atoi(string(secondNumber))
+	if err != nil {
+		return "", err
+	}
+
+	var resultInt int
+
+	switch operator {
+	case '-':
+		resultInt = firstInt - secondInt
+	case '+':
+		resultInt = firstInt + secondInt
+	}
+
+	return fmt.Sprintf("%d", resultInt), nil
 }
