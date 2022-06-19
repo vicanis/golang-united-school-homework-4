@@ -47,7 +47,7 @@ func is(c byte, t string) bool {
 	return false
 }
 
-func StringSum(input string) (string, error) {
+func cleanInput(input string) []byte {
 	var inputBytes []byte
 
 	for _, c := range input {
@@ -56,51 +56,54 @@ func StringSum(input string) (string, error) {
 		}
 	}
 
-	if len(inputBytes) == 0 {
-		return "", fmt.Errorf("parse failed: %w", errorEmptyInput)
-	}
+	return inputBytes
+}
 
-	var i, j int
+func parseNumber(buffer []byte, index int) (number int, newindex int, err error) {
+	newindex = index
 
 	for {
-		if i < len(inputBytes) && (is(inputBytes[i], "digit") || i == 0 && inputBytes[i] == '-') {
-			i++
+		if newindex < len(buffer) && (is(buffer[newindex], "digit") || newindex == 0 && buffer[newindex] == '-') {
+			newindex++
 		} else {
 			break
 		}
 	}
 
-	firstNumber, err := strconv.Atoi(string(inputBytes[:i]))
+	number, err = strconv.Atoi(string(buffer[index:newindex]))
 	if err != nil {
-		return "", fmt.Errorf("first number parse failed: %w", err)
+		return 0, 0, fmt.Errorf("first number parse failed: %w", err)
+	}
+
+	return number, newindex, nil
+}
+
+func StringSum(input string) (string, error) {
+	inputBytes := cleanInput(input)
+
+	if len(inputBytes) == 0 {
+		return "", fmt.Errorf("parse failed: %w", errorEmptyInput)
+	}
+
+	firstNumber, i, err := parseNumber(inputBytes, 0)
+	if err != nil {
+		return "", err
 	}
 
 	if i >= len(inputBytes)-1 {
 		return "", fmt.Errorf("%w: no second operand", errorNotTwoOperands)
 	}
 
-	operator := inputBytes[i]
-
-	j = i + 1
-
-	for {
-		if j < len(inputBytes) && is(inputBytes[j], "digit") {
-			j++
-		} else {
-			break
-		}
+	secondNumber, j, err := parseNumber(inputBytes, i+1)
+	if err != nil {
+		return "", err
 	}
 
 	if j < len(inputBytes)-1 {
 		return "", fmt.Errorf("%w: too many operands", errorNotTwoOperands)
 	}
 
-	secondNumber, err := strconv.Atoi(string(inputBytes[i+1 : j]))
-	if err != nil {
-		return "", fmt.Errorf("second number parse failed: %w", err)
-	}
-
-	switch operator {
+	switch inputBytes[i] {
 	case '-':
 		return fmt.Sprintf("%d", firstNumber-secondNumber), nil
 	case '+':
